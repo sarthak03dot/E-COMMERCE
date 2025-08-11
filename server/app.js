@@ -4,10 +4,14 @@ const authRoutes = require("./routes/auth");
 const itemRoutes = require("./routes/items");
 const ConnectDB = require("./config/db");
 require("dotenv").config();
+const allowedOrigins = ['https://bd-ai-gpgoc.onrender.com', 'http://localhost:3000'];
 
 const app = express();
-
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigin,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  credentials: true,
+}));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 ConnectDB;
