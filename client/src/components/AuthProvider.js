@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 
 export const AuthContext = createContext(null);
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || "http://localhost:5000/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api"
 
 const AuthProvider = ({ children }) => {
   const [authToken, setAuthToken] = useState(localStorage.getItem("token"));

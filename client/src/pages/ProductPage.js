@@ -20,7 +20,7 @@ import RatingDialog from "../components/RatingDialog";
 import { AuthContext } from "../components/AuthProvider";
 import { formatPrice } from "../utils/formatPrice";
 
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || "http://localhost:5000/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api"
 
 const ProductPage = () => {
   const { id } = useParams();

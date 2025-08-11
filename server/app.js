@@ -7,7 +7,7 @@ require("dotenv").config();
 
 const app = express();
 app.use(cors({
-  origin: "https://bd-ai-gpgoc.onrender.com",
+  origin: "https://bd-ai-gpgoc.onrender.com" || "http://localhost:3000",
   methods: ['GET', 'POST', 'PUT', 'DELETE'], 
   credentials: true,
 }));

@@ -31,7 +31,7 @@ import { AuthContext } from "./AuthProvider";
 import AlertDialog from "./AlertDialog";
 import LocationDialog from "./LocationDialog";
 import NewProductModal from "./NewProductModal";
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || "http://localhost:5000/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api"
 
 const Navbar = () => {
   const { authToken, currentUser, handleLogout, setLoginOpen } =
