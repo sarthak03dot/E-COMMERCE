@@ -36,7 +36,7 @@ import { Link } from "react-router-dom";
 import { formatPrice } from "../utils/formatPrice";
 import axios from "axios";
 
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || "http://localhost:5000/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api";
 
 const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
   const [allItems, setAllItems] = useState([]);
@@ -111,7 +111,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
 
     axios
       .post(
-        "http://localhost:5000/api/search",
+        `${API_BASE_URL}/search`,
         { term: searchTerm },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
