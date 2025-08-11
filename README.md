@@ -2,11 +2,11 @@
 
 Welcome to **BD.ai**, an innovative full-stack web application designed to simplify buying and selling across categories like cars, bikes, electronics, and more. Built with React for the frontend and Node.js/Express/Mongoose for the backend, BD.ai offers features such as one-click selling, favorite toggling, eco-scoring, and AI-driven recommendations. This platform aims to provide a seamless marketplace experience with secure transactions.
 ## Demo Image
-<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/93683a53-6f41-4cdd-ae44-4a5c4916dd29" />
-<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/2cd7bd0a-0130-4d3d-a0f9-20e8a6f6d51a" />
-<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/a98e31ff-c269-4e1b-a285-16954938805c" />
-<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/6a0d76a3-fec3-4824-b941-7624107c2b8e" />
 <img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/e81e29ed-9b70-4f4c-82c5-0a3163192a08" />
+<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/6a0d76a3-fec3-4824-b941-7624107c2b8e" />
+<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/a98e31ff-c269-4e1b-a285-16954938805c" />
+<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/2cd7bd0a-0130-4d3d-a0f9-20e8a6f6d51a" />
+<img width="1920" height="964" alt="Image" src="https://github.com/user-attachments/assets/93683a53-6f41-4cdd-ae44-4a5c4916dd29" />
 
 
 ## Features
