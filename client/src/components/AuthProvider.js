@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 
 export const AuthContext = createContext(null);
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || "http://localhost:5000/api";
 
 const AuthProvider = ({ children }) => {
   const [authToken, setAuthToken] = useState(localStorage.getItem("token"));
@@ -21,6 +21,7 @@ const AuthProvider = ({ children }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const [isError, setIsError] = useState("");
 
   const handleLogin = async () => {
     setAuthMessage("");
@@ -47,10 +48,13 @@ const AuthProvider = ({ children }) => {
         setPassword("");
       } else {
         setAuthMessage(data.message || "Login failed.");
+        setIsError(true);
+        setIsError(true);
       }
     } catch (error) {
       console.error("Login error:", error);
       setAuthMessage("An error occurred during login.");
+      setIsError(true);
     }
   };
 
@@ -76,8 +80,10 @@ const AuthProvider = ({ children }) => {
         setAuthMessage("Registration successful! Please login.");
         setUsername("");
         setPassword("");
+        setIsError(false);
       } else {
         setAuthMessage(data.message || "Registration failed.");
+        setIsError(true);
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -153,12 +159,12 @@ const AuthProvider = ({ children }) => {
           />
           {authMessage && (
             <Typography
-              color="error"
               variant="body2"
               sx={{
                 mt: 2,
                 textAlign: "center",
-                backgroundColor: "#ffebee",
+                backgroundColor: isError ? "#ffebee" : "#e8f5e9",
+                color: isError ? "#d32f2f" : "#2e7d32",
                 padding: "6px",
                 borderRadius: "8px",
               }}
