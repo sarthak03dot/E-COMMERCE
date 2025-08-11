@@ -87,7 +87,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
   try {
     const {
       title,
@@ -250,4 +250,21 @@ router.post("/testimonial", authMiddleware, async (req, res) => {
   }
 });
 
+// this is for add data by postman
+router.post("/products", async (req, res) => {
+  try {
+    const savedProducts = await Item.insertMany(req.body);
+    res.status(201).json(savedProducts);
+  } catch (err) {
+    res.status(500).json({ message: "Error adding products", error: err.message });
+  }
+});
+
+
+
+
+
 module.exports = router;
+
+
+

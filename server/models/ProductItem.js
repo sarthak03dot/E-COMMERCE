@@ -6,7 +6,7 @@ const productItemSchema = new mongoose.Schema({
   category: { type: String, required: true },
   image: { type: String, required: true },
   date: { type: Date, default: Date.now },
-  ecoScore: { type: Number, required: true }, 
+  ecoScore: { type: Number, required: false }, 
   model: { type: String }, 
   year: { type: String },
   location: { type: String, default: "Bengaluru" },

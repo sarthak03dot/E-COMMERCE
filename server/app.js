@@ -15,6 +15,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/search", require("./routes/historyRoutes"));
 
+app.get("/", (req, res) => {
+  res.send("Hello, i'm Working...");
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
