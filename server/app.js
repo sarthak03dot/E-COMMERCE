@@ -7,21 +7,23 @@ require("dotenv").config();
 
 const app = express();
 
+
 const allowedOrigins = [
-  "http://localhost:3000",
-  "https://e-commerce-rruf.onrender.com",
-  "https://bd-ai-gpgoc.onrender.com",
+  "https://bd-ai-gpgoc.onrender.com", // production frontend
+  "http://localhost:3000"             // development frontend
 ];
 
 app.use(
   cors({
-    origin: "https://bd-ai-gpgoc.onrender.com",
-
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
 
     credentials: true,
   })
 );
+
+
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
