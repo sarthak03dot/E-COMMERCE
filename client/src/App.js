@@ -1,12 +1,22 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AuthProvider from "./components/AuthProvider";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import HomePage from "./pages/HomePage";
 import ProductPage from "./pages/ProductPage";
+import CategoryPage from "./pages/CategoryPage";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { Box } from "@mui/material";
+import Custom404 from "./pages/_404";
+import { Box, Typography, Button } from "@mui/material";
 import "./App.css";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+
 const brandTabsCars = [
   "Mahindra & Mahindra",
   "Tata Motors",
@@ -22,7 +32,6 @@ const brandTabsBikes = [
   "Royal Enfield",
   "Yamaha Motor Company",
   "KTM",
-  "Royal Enfield",
 ];
 
 const features = [
@@ -40,27 +49,15 @@ const features = [
   },
 ];
 
+const PrivateRoute = ({ children }) => {
+  const authToken = localStorage.getItem("token");
+  return authToken ? children : <Navigate to="/login" replace />;
+};
+
 const App = () => {
   return (
-    <Router>
-      <AuthProvider>
-        {/* <Navbar />
-        <Box sx={{ pt: { xs: "64px", sm: "80px" } }}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <HomePage
-                  brandTabsCars={brandTabsCars}
-                  brandTabsBikes={brandTabsBikes}
-                  features={features}
-                />
-              }
-            />
-            <Route path="/product/:id" element={<ProductPage />} />
-          </Routes>
-          <Footer />
-        </Box> */}
+    <AuthProvider>
+      <Router>
         <Box
           sx={{
             width: "100%",
@@ -70,7 +67,6 @@ const App = () => {
           }}
         >
           <Navbar sx={{ width: "100%" }} />
-
           <Box sx={{ flex: 1, width: "100%" }}>
             <Routes>
               <Route
@@ -83,30 +79,66 @@ const App = () => {
                   />
                 }
               />
-              <Route path="/product/:id" element={<ProductPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              {/* <Route path="/login" element={<LoginSignupPage />} /> */}
+              <Route path="/category/:category" element={<CategoryPage />} />
               <Route
-                path="*"
+                path="/product/:id"
                 element={
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      height: "100vh",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <h4>We'll Back Soon!</h4>
-                  </div>
+                  <ProductPage />
+                  // <PrivateRoute>
+                  //   <ProductPage />
+                  // </PrivateRoute>
                 }
               />
+              <Route
+                path="/your-items"
+                element={
+                  <PrivateRoute>
+                    <Custom404 />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/favourites"
+                element={
+                  <PrivateRoute>
+                    <Custom404 />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <PrivateRoute>
+                    <Custom404 />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/blogs"
+                element={
+                  <PrivateRoute>
+                    <Custom404 />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/career"
+                element={
+                  <PrivateRoute>
+                    <Custom404 />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="*" element={<Custom404 />} />
             </Routes>
           </Box>
-
           <Footer sx={{ width: "100%" }} />
         </Box>
-      </AuthProvider>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 };
 

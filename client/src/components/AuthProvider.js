@@ -10,7 +10,8 @@ import {
 } from "@mui/material";
 
 export const AuthContext = createContext(null);
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api"
+const API_BASE_URL =
+  "http://localhost:5000/api" || "https://e-commerce-rruf.onrender.com/api";
 
 const AuthProvider = ({ children }) => {
   const [authToken, setAuthToken] = useState(localStorage.getItem("token"));
@@ -22,6 +23,12 @@ const AuthProvider = ({ children }) => {
   const [password, setPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [isError, setIsError] = useState("");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      window.location.reload();
+    }
+  }, [authToken]);
 
   const handleLogin = async () => {
     setAuthMessage("");
@@ -46,6 +53,7 @@ const AuthProvider = ({ children }) => {
         setAuthMessage("");
         setUsername("");
         setPassword("");
+        window.location.reload();
       } else {
         setAuthMessage(data.message || "Login failed.");
         setIsError(true);

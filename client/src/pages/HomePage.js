@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -31,12 +31,12 @@ import NewTestimonialModal from "../components/NewTestimonialModal";
 import AlertDialog from "../components/AlertDialog";
 import manImage from "../assets/images/man.svg";
 import ElectronicsImg from "../assets/images/electronics.avif";
-import { AuthContext } from "../components/AuthProvider";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatPrice } from "../utils/formatPrice";
 import axios from "axios";
 
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api";
+const API_BASE_URL =
+  "http://localhost:5000/api" || "https://e-commerce-rruf.onrender.com/api";
 
 const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
   const [allItems, setAllItems] = useState([]);
@@ -49,17 +49,17 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { authToken, setLoginOpen } = useContext(AuthContext);
   const [newProductModalOpen, setNewProductModalOpen] = useState(false);
   const [newTestimonialModalOpen, setNewTestimonialModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertData, setAlertData] = useState({
     title: "Alert",
     message: "",
     onConfirm: null,
   });
+  const navigate = useNavigate();
+
+  const authToken = localStorage.getItem("token");
 
   const fetchData = async () => {
     try {
@@ -68,12 +68,13 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
         await Promise.all([
           fetch(`${API_BASE_URL}/items`).then((res) => res.json()),
           fetch(`${API_BASE_URL}/items/recommended`).then((res) => res.json()),
-          fetch(`${API_BASE_URL}/items/testimonials`).then((res) => res.json()),
-          fetch(`${API_BASE_URL}/items/categories`).then((res) => res.json()),
+          fetch(`${API_BASE_URL}/testimonials`).then((res) => res.json()),
+          fetch(`${API_BASE_URL}/categories`).then((res) => res.json()),
         ]);
 
       setAllItems(allItemsRes);
       setCars(allItemsRes.filter((item) => item.category === "Cars"));
+
       setBikes(allItemsRes.filter((item) => item.category === "Bikes"));
       setRecommendedItems(recommendedRes);
       setTestimonials(testimonialsRes);
@@ -88,33 +89,28 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
 
   useEffect(() => {
     fetchData();
-  }, [authToken]);
-
-  useEffect(() => {
-    const fetchRecentSearches = async () => {
-      try {
-        const res = await axios.get("/api/search/recent", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        setRecentSearches(res.data);
-      } catch (err) {
-        console.error("Error fetching recent searches:", err);
-      }
-    };
-
-    fetchRecentSearches();
   }, []);
+
+ 
+
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
+    if (!authToken) {
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to save searches.",
+        onConfirm: () => navigate("/login"),
+      });
+      setAlertOpen(true);
+      return;
+    }
 
     axios
       .post(
         `${API_BASE_URL}/search`,
         { term: searchTerm },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${authToken}` },
         }
       )
       .then((res) => {
@@ -131,7 +127,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
       setAlertData({
         title: "Login Required",
         message: "Please log in to favorite items.",
-        onConfirm: () => setLoginOpen(true),
+        onConfirm: () => navigate("/login"),
       });
       setAlertOpen(true);
       return;
@@ -145,7 +141,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
         },
       });
       if (!response.ok) {
-        const errorText = await response.text(); // Use text() for non-JSON errors
+        const errorText = await response.text();
         const errorData = errorText
           ? JSON.parse(errorText)
           : { error: "Failed to toggle favorite" };
@@ -168,7 +164,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
       setAlertData({
         title: "Login Required",
         message: "Please log in to sell items.",
-        onConfirm: () => setLoginOpen(true),
+        onConfirm: () => navigate("/login"),
       });
       setAlertOpen(true);
       return;
@@ -192,7 +188,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
         body: formData,
       });
       if (!response.ok) {
-        const errorText = await response.text(); // Handle non-JSON errors
+        const errorText = await response.text();
         let errorMessage = "Failed to add product";
         try {
           const errorData = JSON.parse(errorText);
@@ -208,8 +204,8 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
         message: "Product added successfully!",
       });
       setAlertOpen(true);
-      setNewProductModalOpen(false); // Sync with newProductModalOpen
-      fetchData(); // Refresh data after successful addition
+      setNewProductModalOpen(false);
+      fetchData();
     } catch (error) {
       console.error("Error adding product:", error);
       setAlertData({
@@ -225,7 +221,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
       setAlertData({
         title: "Login Required",
         message: "Please log in to submit a testimonial.",
-        onConfirm: () => setLoginOpen(true),
+        onConfirm: () => navigate("/login"),
       });
       setAlertOpen(true);
       return;
@@ -240,7 +236,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/items/testimonial`, {
+      const response = await fetch(`${API_BASE_URL}/testimonials/testimonial`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -271,23 +267,6 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
       setAlertOpen(true);
     }
   };
-
-  const handleCategoryClick = (categoryName) => {
-    setSelectedCategory(categoryName);
-    console.log(`Filtering by category: ${categoryName}`);
-  };
-
-  const filteredCars =
-    selectedCategory === null || selectedCategory === "Cars"
-      ? allItems.filter((item) => item.category === "Cars")
-      : [];
-  const filteredBikes =
-    selectedCategory === null || selectedCategory === "Bikes"
-      ? allItems.filter((item) => item.category === "Bikes")
-      : [];
-  const itemsForRecommendationsSection = selectedCategory
-    ? allItems.filter((item) => item.category === selectedCategory)
-    : recommendedItems;
 
   if (loading) {
     return (
@@ -465,44 +444,15 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
                 pb: { xs: 1, md: 0 },
               }}
             >
-              <Box
-                key="All"
-                sx={{ textAlign: "center", minWidth: { xs: 120, sm: 200 } }}
-                onClick={() => setSelectedCategory(null)}
+              <Link
+                to="/category/All"
+                style={{ textDecoration: "none", color: "inherit" }}
               >
-                <Paper
-                  elevation={selectedCategory === null ? 4 : 0}
-                  sx={{
-                    width: "200px",
-                    height: "200px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: selectedCategory === null ? "#e0e0e0" : "#f5f5f5",
-                    aspectRatio: "1 / 1",
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    border:
-                      selectedCategory === null ? "3px solid blue" : "none",
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold">
-                    All
-                  </Typography>
-                </Paper>
-                <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                  All Categories
-                </Typography>
-              </Box>
-              {categories.map((cat) => (
                 <Box
-                  key={cat.name}
                   sx={{ textAlign: "center", minWidth: { xs: 120, sm: 200 } }}
-                  onClick={() => handleCategoryClick(cat.name)}
                 >
                   <Paper
-                    elevation={selectedCategory === cat.name ? 4 : 0}
+                    elevation={0}
                     sx={{
                       width: "200px",
                       height: "200px",
@@ -510,33 +460,62 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      bgcolor:
-                        selectedCategory === cat.name ? "#e0e0e0" : "#f5f5f5",
+                      bgcolor: "#f5f5f5",
                       aspectRatio: "1 / 1",
                       overflow: "hidden",
                       cursor: "pointer",
-                      border:
-                        selectedCategory === cat.name
-                          ? "3px solid blue"
-                          : "none",
                     }}
                   >
-                    <Box
-                      component="img"
-                      src={cat.img}
-                      alt={cat.name}
-                      sx={{
-                        borderRadius: "50%",
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
+                    <Typography variant="h6" fontWeight="bold">
+                      All
+                    </Typography>
                   </Paper>
                   <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                    {cat.name}
+                    All Categories
                   </Typography>
                 </Box>
+              </Link>
+              {categories.map((cat) => (
+                <Link
+                  key={cat.name}
+                  to={`/category/${cat.name}`}
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  <Box
+                    sx={{ textAlign: "center", minWidth: { xs: 120, sm: 200 } }}
+                  >
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        width: "200px",
+                        height: "200px",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: "#f5f5f5",
+                        aspectRatio: "1 / 1",
+                        overflow: "hidden",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={cat.img}
+                        alt={cat.name}
+                        sx={{
+                          borderRadius: "50%",
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Paper>
+                    <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                      {cat.name}
+                    </Typography>
+                  </Box>
+                </Link>
               ))}
             </Box>
             <IconButton
@@ -611,23 +590,21 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
           <ListingSection
             title="Newly listed cars"
             brands={brandTabsCars}
-            items={filteredCars}
+            items={cars}
             onFavoriteToggle={handleFavoriteToggle}
           />
           <ListingSection
             title="Newly listed budget Bikes"
             brands={brandTabsBikes}
-            items={filteredBikes}
+            items={bikes}
             onFavoriteToggle={handleFavoriteToggle}
           />
         </Box>
 
-        {/* Recommended For You Section / Filtered Category Items Section */}
+        {/* Recommended For You Section */}
         <Box sx={{ p: { xs: 2, sm: 3 }, mt: 4 }}>
           <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-            {selectedCategory
-              ? `Items in ${selectedCategory}`
-              : "Recommended For you"}
+            Recommended For you
           </Typography>
           <Grid
             container
@@ -635,7 +612,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
             display="flex"
             justifyContent="space-between"
           >
-            {itemsForRecommendationsSection.map((item) => (
+            {recommendedItems.map((item) => (
               <Grid item xs={6} sm={4} md={3} key={item._id}>
                 <Card
                   sx={{ borderRadius: "15px", boxShadow: 2, height: "100%" }}
@@ -644,7 +621,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
                     <CardMedia
                       component="img"
                       height={{ xs: 120, sm: 180 }}
-                      image={item.image}
+                      image={item.image || item.images[0]}
                       alt={item.title}
                       sx={{
                         width: "300px",
@@ -677,21 +654,19 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
                       <Typography fontWeight="bold">
                         {formatPrice(item.price)}
                       </Typography>
+
                       <Typography variant="caption" color="text.secondary">
                         {item.year} &nbsp; Eco: {item.ecoScore}/100
                       </Typography>
+
                       <Typography
                         variant="body2"
                         sx={{ mt: 1 }}
                         color="text.primary"
                       >
-                        <Link
-                          to={`/product/${item._id}`}
-                          style={{ textDecoration: "none", color: "inherit" }}
-                        >
-                          {item.title}
-                        </Link>
+                        {item.title}
                       </Typography>
+
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -699,6 +674,7 @@ const HomePage = ({ brandTabsCars, brandTabsBikes, features }) => {
                       >
                         {item.location}
                       </Typography>
+
                       <Typography variant="caption" sx={{ float: "right" }}>
                         {new Date(item.date).toLocaleDateString()}
                       </Typography>

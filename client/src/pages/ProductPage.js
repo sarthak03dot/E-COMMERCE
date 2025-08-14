@@ -4,7 +4,6 @@ import {
   Container,
   Typography,
   Button,
-  Grid,
   CardMedia,
   IconButton,
   CircularProgress,
@@ -13,132 +12,141 @@ import {
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShareIcon from "@mui/icons-material/Share";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import ListingSection from "../components/ListingSection";
 import AlertDialog from "../components/AlertDialog";
 import RatingDialog from "../components/RatingDialog";
-import { AuthContext } from "../components/AuthProvider";
+import { AuthContext } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
+import axios from "axios";
 
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api"
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000/api"|| "https://e-commerce-rruf.onrender.com/api";
 
 const ProductPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const { authToken, currentUser, setLoginOpen, handleLogout } =
+    useContext(AuthContext);
   const [product, setProduct] = useState(null);
   const [recommendedItems, setRecommendedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { authToken, setLoginOpen } = useContext(AuthContext);
-
-  // Custom alert states
   const [alertOpen, setAlertOpen] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
-  const [alertTitle, setAlertTitle] = useState("Alert");
-
-  // Rating dialog state
+  const [alertData, setAlertData] = useState({
+    title: "Alert",
+    message: "",
+    onConfirm: null,
+  });
   const [ratingOpen, setRatingOpen] = useState(false);
 
   useEffect(() => {
     const fetchProductAndRecommendations = async () => {
       try {
         setLoading(true);
-        const productRes = await fetch(`${API_BASE_URL}/items/${id}`).then(
-          (res) => res.json()
-        );
-        if (productRes.error) throw new Error(productRes.error);
-        setProduct(productRes);
-        console.log("ppppppppppp:", productRes);
-
-        const recommendedRes = await fetch(
-          `${API_BASE_URL}/items/recommended`
-        ).then((res) => res.json());
-        setRecommendedItems(recommendedRes);
+        const [productRes, recommendedRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/items/${id}`, {
+            headers: { "Cache-Control": "no-cache" },
+          }),
+          axios.get(`${API_BASE_URL}/items/recommended`, {
+            headers: { "Cache-Control": "no-cache" },
+          }),
+        ]);
+        if (productRes.data.error) throw new Error(productRes.data.error);
+        setProduct(productRes.data);
+        setRecommendedItems(recommendedRes.data);
       } catch (err) {
+        console.error("ppppppppppp: Fetch error:", err); // Debug log
         setError("Failed to fetch product details: " + err.message);
-        console.error("Error fetching product details:", err);
       } finally {
         setLoading(false);
       }
     };
     fetchProductAndRecommendations();
-  }, [id, authToken]);
+  }, [id]);
 
   const handleFavoriteToggle = async (itemId) => {
     if (!authToken) {
-      setAlertTitle("Login Required");
-      setAlertMessage("Please log in to favorite items.");
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to favorite items.",
+        onConfirm: () => setLoginOpen(true),
+      });
       setAlertOpen(true);
-      setLoginOpen(true);
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/items/favorite/${itemId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to toggle favorite");
+      const response = await axios.post(
+        `${API_BASE_URL}/items/favorite/${itemId}`,
+        {},
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      setProduct((prev) => ({ ...prev, liked: response.data.liked }));
+    } catch (err) {
+      if (err.response?.status === 401) {
+        handleLogout();
+        setAlertData({
+          title: "Session Expired",
+          message: "Your session has expired. Please log in again.",
+          onConfirm: () => setLoginOpen(true),
+        });
+      } else {
+        setAlertData({
+          title: "Error",
+          message: "Error toggling favorite: " + err.message,
+        });
       }
-      setProduct((prevProduct) => ({
-        ...prevProduct,
-        liked: !prevProduct.liked,
-      }));
-      console.log(`Item ${itemId} favorite status toggled successfully!`);
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      setAlertTitle("Error");
-      setAlertMessage("Error toggling favorite: " + error.message);
       setAlertOpen(true);
     }
   };
 
   const handlePurchase = async () => {
     if (!authToken) {
-      setAlertTitle("Login Required");
-      setAlertMessage("Please log in to purchase this item.");
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to purchase this item.",
+        onConfirm: () => setLoginOpen(true),
+      });
       setAlertOpen(true);
-      setLoginOpen(true);
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/items/purchase/${id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
+      const response = await axios.post(
+        `${API_BASE_URL}/items/purchase/${id}`,
+        {},
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      setProduct((prev) => ({ ...prev, purchased: response.data.purchased }));
+      setAlertData({
+        title: "Success",
+        message: "Item purchased successfully!",
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to purchase item");
-      }
-      setAlertTitle("Success");
-      setAlertMessage("Item purchased successfully!");
       setAlertOpen(true);
-      setProduct((prevProduct) => ({
-        ...prevProduct,
-        purchased: true,
-      }));
-      console.log("Item purchased successfully!");
-    } catch (error) {
-      console.error("Error purchasing item:", error);
-      setAlertTitle("Error");
-      setAlertMessage("Error purchasing item: " + error.message);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        handleLogout();
+        setAlertData({
+          title: "Session Expired",
+          message: "Your session has expired. Please log in again.",
+          onConfirm: () => setLoginOpen(true),
+        });
+      } else {
+        setAlertData({
+          title: "Error",
+          message: "Error purchasing item: " + err.message,
+        });
+      }
       setAlertOpen(true);
     }
   };
 
   const handleRate = () => {
     if (!authToken) {
-      setAlertTitle("Login Required");
-      setAlertMessage("Please log in to rate this item.");
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to rate this item.",
+        onConfirm: () => setLoginOpen(true),
+      });
       setAlertOpen(true);
-      setLoginOpen(true);
       return;
     }
     setRatingOpen(true);
@@ -146,30 +154,35 @@ const ProductPage = () => {
 
   const submitRating = async (newRating) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/items/rate/${id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ rating: newRating }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to rate item");
-      }
-      const updatedProductRes = await fetch(`${API_BASE_URL}/items/${id}`).then(
-        (res) => res.json()
+      await axios.post(
+        `${API_BASE_URL}/items/rate/${id}`,
+        { rating: newRating },
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
-      setProduct(updatedProductRes);
-      setAlertTitle("Success");
-      setAlertMessage(`You rated this item ${newRating} stars!`);
+      const updatedProduct = await axios.get(`${API_BASE_URL}/items/${id}`, {
+        headers: { "Cache-Control": "no-cache" },
+      });
+      setProduct(updatedProduct.data);
+      setAlertData({
+        title: "Success",
+        message: `You rated this item ${newRating} stars!`,
+      });
       setAlertOpen(true);
-      console.log(`Item rated ${newRating} stars successfully!`);
-    } catch (error) {
-      console.error("Error rating item:", error);
-      setAlertTitle("Error");
-      setAlertMessage("Error rating item: " + error.message);
+      setRatingOpen(false);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        handleLogout();
+        setAlertData({
+          title: "Session Expired",
+          message: "Your session has expired. Please log in again.",
+          onConfirm: () => setLoginOpen(true),
+        });
+      } else {
+        setAlertData({
+          title: "Error",
+          message: "Error rating item: " + err.message,
+        });
+      }
       setAlertOpen(true);
     }
   };
@@ -195,7 +208,7 @@ const ProductPage = () => {
         <Typography variant="h6">
           Error: {error || "Product not found."}
         </Typography>
-        <Button onClick={() => navigate("/")} variant="outlined" sx={{ mt: 2 }}>
+        <Button component={Link} to="/" variant="outlined" sx={{ mt: 2 }}>
           Go to Home
         </Button>
       </Box>
@@ -218,7 +231,11 @@ const ProductPage = () => {
             <Box sx={{ flex: 1, mr: { md: 4 }, mb: { xs: 4, md: 0 } }}>
               <CardMedia
                 component="img"
-                image={product.image}
+                image={
+                  product.image ||
+                  product.images[0] ||
+                  "https://via.placeholder.com/500"
+                }
                 alt={product.title}
                 sx={{
                   borderRadius: 3,
@@ -235,7 +252,7 @@ const ProductPage = () => {
                   overflowX: "auto",
                 }}
               >
-                {Array.from({ length: 6 }).map((_, idx) => (
+                {(product.images || []).map((img, idx) => (
                   <Box
                     key={idx}
                     sx={{
@@ -248,10 +265,9 @@ const ProductPage = () => {
                       flexShrink: 0,
                       cursor: "pointer",
                     }}
-                    onClick={() => console.log(`Thumbnail ${idx + 1} clicked`)}
                   >
                     <img
-                      src={product.image}
+                      src={img}
                       alt={`Thumbnail ${idx + 1}`}
                       style={{
                         width: "100%",
@@ -263,7 +279,6 @@ const ProductPage = () => {
                 ))}
               </Box>
             </Box>
-
             <Box sx={{ flex: 1 }}>
               <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
                 <IconButton onClick={() => handleFavoriteToggle(product._id)}>
@@ -273,22 +288,18 @@ const ProductPage = () => {
                     <FavoriteBorderIcon />
                   )}
                 </IconButton>
-                <IconButton onClick={() => console.log("Share icon clicked")}>
+                <IconButton>
                   <ShareIcon />
                 </IconButton>
               </Box>
-
               <Typography variant="h4" fontWeight="bold">
                 {product.title}
               </Typography>
               <Typography variant="subtitle1" color="text.secondary">
-                By{" "}
-                {product.seller?.username ||
-                  product.sellerInfo?.name ||
-                  "Unknown Seller"}
+                By {product.seller?.username || "Unknown Seller"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Eco: {product.ecoScore}/100
+                Eco: {product.ecoScore || "N/A"}/100
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                 <Typography variant="h6" fontWeight="bold">
@@ -308,7 +319,6 @@ const ProductPage = () => {
                 {new Date(product.date).toLocaleDateString()} •{" "}
                 {product.location}
               </Typography>
-
               <Box sx={{ mt: 3 }}>
                 <Typography variant="h6" fontWeight="bold">
                   Product Description
@@ -333,48 +343,26 @@ const ProductPage = () => {
                   </Typography>
                 )}
               </Box>
-
               <Box sx={{ mt: 3 }}>
                 <Typography variant="h6" fontWeight="bold">
                   Seller Info
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                   <Typography variant="body2">
-                    {product.seller?.username ||
-                      product.sellerInfo?.name ||
-                      "Unknown"}
+                    {product.seller?.username || "Unknown"}
                   </Typography>
                   <Typography variant="body2" sx={{ ml: 2, color: "#f5b301" }}>
-                    {"★".repeat(
-                      Math.floor(
-                        product.seller?.rating ||
-                          product.sellerInfo?.rating ||
-                          0
-                      )
-                    )}{" "}
-                    (
-                    {(
-                      product.seller?.rating ||
-                      product.sellerInfo?.rating ||
-                      0
-                    ).toFixed(1)}
-                    )
+                    {"★".repeat(Math.floor(product.seller?.rating || 0))} (
+                    {(product.seller?.rating || 0).toFixed(1)})
                   </Typography>
                 </Box>
                 <Button
                   variant="outlined"
                   sx={{ mt: 2, textTransform: "none" }}
-                  onClick={() =>
-                    console.log(
-                      "View Seller functionality to be implemented. Seller ID:",
-                      product.seller?._id
-                    )
-                  }
                 >
                   View Seller
                 </Button>
               </Box>
-
               <Box sx={{ mt: 3 }}>
                 <Typography variant="h6" fontWeight="bold">
                   Actions
@@ -399,7 +387,6 @@ const ProductPage = () => {
               </Box>
             </Box>
           </Box>
-
           <Divider sx={{ my: 4 }} />
           <ListingSection
             title="Top Recommendations"
@@ -410,9 +397,10 @@ const ProductPage = () => {
         </Box>
         <AlertDialog
           open={alertOpen}
-          title={alertTitle}
-          message={alertMessage}
+          title={alertData.title}
+          message={alertData.message}
           onClose={() => setAlertOpen(false)}
+          onConfirm={alertData.onConfirm}
         />
         <RatingDialog
           open={ratingOpen}

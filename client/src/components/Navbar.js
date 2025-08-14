@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   AppBar,
   Container,
@@ -27,18 +27,22 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.avif";
-import { AuthContext } from "./AuthProvider";
 import AlertDialog from "./AlertDialog";
 import LocationDialog from "./LocationDialog";
 import NewProductModal from "./NewProductModal";
-const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api"
+import { AuthContext } from "../context/AuthContext";
+import axios from "axios";
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000/api"|| "https://e-commerce-rruf.onrender.com/api";
 
 const Navbar = () => {
-  const { authToken, currentUser, handleLogout, setLoginOpen } =
-    useContext(AuthContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
+  const authContext = useContext(AuthContext);
+  const { authToken, currentUser, setLoginOpen, handleLogin, handleLogout } =
+    authContext || {};
 
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [location, setLocation] = useState("Taj Garden Retreat, Bengaluru");
@@ -51,17 +55,34 @@ const Navbar = () => {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/categories`);
+        if (response.data.length === 0) {
+          setAlertData({
+            title: "Warning",
+            message: "No categories available",
+          });
+          setAlertOpen(true);
+        } else {
+          setCategories(response.data);
+        }
+      } catch (err) {
+        setAlertData({
+          title: "Error",
+          message: `Failed to fetch categories: ${err.message}`,
+        });
+        setAlertOpen(true);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const openMenu = (e) => setMenuAnchor(e.currentTarget);
   const closeMenu = () => setMenuAnchor(null);
-
-  const categories = [
-    { name: "Cars" },
-    { name: "Bikes" },
-    { name: "Electronics" },
-    { name: "Furniture" },
-    { name: "Clothing" },
-  ];
 
   const navItems = [
     { icon: <LocalMallIcon />, label: "Your Items", path: "/your-items" },
@@ -76,10 +97,28 @@ const Navbar = () => {
   };
 
   const handleSell = () => {
+    if (!authToken) {
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to sell items.",
+        onConfirm: () => setLoginOpen(true),
+      });
+      setAlertOpen(true);
+      return;
+    }
     setModalOpen(true);
   };
 
   const handleOneClickSell = () => {
+    if (!authToken) {
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to use one-click sell.",
+        onConfirm: () => setLoginOpen(true),
+      });
+      setAlertOpen(true);
+      return;
+    }
     setAlertData({
       title: "One Click Sell",
       message:
@@ -94,6 +133,15 @@ const Navbar = () => {
   };
 
   const handleNotificationClick = () => {
+    if (!authToken) {
+      setAlertData({
+        title: "Login Required",
+        message: "Please log in to view notifications.",
+        onConfirm: () => setLoginOpen(true),
+      });
+      setAlertOpen(true);
+      return;
+    }
     setNotificationCount((prev) => prev + 1);
     setAlertData({
       title: "Notification",
@@ -107,41 +155,6 @@ const Navbar = () => {
     if (alertData.onConfirm) alertData.onConfirm();
   };
 
- const handleAddProduct = async (formData, error) => {
-  if (error) {
-    setAlertData({ title: "Validation Error", message: error });
-    setAlertOpen(true);
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/items`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to add product");
-    }
-    const result = await response.json();
-    setAlertData({
-      title: "Success",
-      message: "Product added successfully!",
-    });
-    setAlertOpen(true);
-    setModalOpen(false);
-  } catch (error) {
-    console.error("Error adding product:", error);
-    setAlertData({
-      title: "Error",
-      message: "Error adding product: " + error.message,
-    });
-    setAlertOpen(true);
-  }
-};
   return (
     <AppBar
       position="fixed"
@@ -166,7 +179,6 @@ const Navbar = () => {
             minHeight: { xs: 56, sm: 72 },
           }}
         >
-          {/* Left side logo */}
           <Link
             to="/"
             style={{
@@ -187,7 +199,6 @@ const Navbar = () => {
             />
           </Link>
 
-          {/* Desktop View */}
           {!isMobile && (
             <>
               <Button
@@ -281,7 +292,7 @@ const Navbar = () => {
                       sx={{ width: 32, height: 32 }}
                     />
                     <Typography variant="caption">
-                      {currentUser?.username}
+                      {currentUser?.username || "User"}
                     </Typography>
                     <Button
                       variant="outlined"
@@ -293,20 +304,21 @@ const Navbar = () => {
                     </Button>
                   </Stack>
                 ) : (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setLoginOpen(true)}
-                    sx={{ textTransform: "none" }}
-                  >
-                    Login
-                  </Button>
+                  <Link to="/login">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setLoginOpen(true)}
+                      sx={{ textTransform: "none" }}
+                    >
+                      Login
+                    </Button>
+                  </Link>
                 )}
               </Stack>
             </>
           )}
 
-          {/* Mobile View */}
           {isMobile && (
             <>
               <IconButton onClick={openMenu}>
@@ -358,7 +370,7 @@ const Navbar = () => {
                         src="https://randomuser.me/api/portraits/men/1.jpg"
                         sx={{ width: 28, height: 28, mr: 1 }}
                       />
-                      {currentUser?.username}
+                      {currentUser?.username || "User"}
                     </MenuItem>
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </>
@@ -371,7 +383,6 @@ const Navbar = () => {
         </Toolbar>
       </Container>
 
-      {/* Render the AlertDialog */}
       <AlertDialog
         open={alertOpen}
         onClose={handleAlertClose}
@@ -381,7 +392,6 @@ const Navbar = () => {
       <NewProductModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onAddProduct={handleAddProduct}
         categories={categories}
       />
     </AppBar>

@@ -63,7 +63,7 @@ const ListingSection = ({ title, brands, items, onFavoriteToggle }) => {
               <Box sx={{ position: "relative" }}>
                 <CardMedia
                   component="img"
-                  src={item.image}
+                  src={item.image || item.images[0]}
                   sx={{
                     width: "300px",
                     height: "250px",
