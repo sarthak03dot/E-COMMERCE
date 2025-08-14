@@ -545,8 +545,8 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import AlertDialog from "./AlertDialog";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:5000/api"|| "https://e-commerce-rruf.onrender.com/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || process.env.REACT_APP_API_URL;
+
 
 const NewProductModal = ({ open, onClose, categories }) => {
   const { authToken } = useContext(AuthContext) || {};

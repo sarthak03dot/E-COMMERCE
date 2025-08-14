@@ -7,10 +7,10 @@ require("dotenv").config();
 
 const app = express();
 
-
 const allowedOrigins = [
-  "https://bd-ai-gpgoc.onrender.com", // production frontend
-  "http://localhost:3000"             // development frontend
+  "https://bd-ai-gpgoc.onrender.com",
+  "http://localhost:3000",
+  "https://e-commerce-rruf.onrender.com",
 ];
 
 app.use(
@@ -21,8 +21,6 @@ app.use(
     credentials: true,
   })
 );
-
-
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

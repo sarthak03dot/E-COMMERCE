@@ -9,10 +9,7 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  "http://localhost:5000/api" ||
-  "https://e-commerce-rruf.onrender.com/api";
+const API_BASE_URL = "https://e-commerce-rruf.onrender.com/api" || process.env.REACT_APP_API_URL;
 
 const Register = () => {
   const [username, setUsername] = useState("");
